@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 import tensorflow as tf
 from mtcnn import MTCNN
-from keras_vggface.utils import preprocess_input
+
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -73,25 +73,36 @@ st.markdown("""
 # ===========================
 @st.cache_resource
 def load_models():
-    """Load VGGFace model, MTCNN detector, and class names"""
     try:
-        # Load VGGFace model
-        model = tf.keras.models.load_model("vgg_model.h5")
-        
-        # Load class names
-        class_names = np.load("class_names.npy", allow_pickle=True)
-        
-        # Initialize MTCNN
-        detector = MTCNN()
-        
-        # Load config
-        with open("vgg_config.json", "r") as f:
+        model = tf.keras.models.load_model("models/vgg_model.h5", compile=False)
+
+        class_names = np.load("models/class_names.npy", allow_pickle=True)
+
+        with open("models/vgg_config.json", "r") as f:
             config = json.load(f)
-        
+
+        detector = MTCNN()
+
         return model, detector, class_names, config
+
     except Exception as e:
         st.error(f"❌ Error loading models: {str(e)}")
         st.stop()
+import numpy as np
+
+def preprocess_vggface_resnet(x: np.ndarray) -> np.ndarray:
+    """
+    Preprocess ala keras_vggface.utils.preprocess_input(version=2)
+    Asumsi input: RGB, float32, range 0-255
+    """
+    x = x.astype('float32')
+    # RGB -> BGR
+    x = x[..., ::-1]
+    # Kurangi mean channel (versi=2 / ResNet50)
+    x[..., 0] -= 91.4953   # B
+    x[..., 1] -= 103.8827  # G
+    x[..., 2] -= 131.0912  # R
+    return x
 
 # ===========================
 # FACE DETECTION & PREDICTION
@@ -159,7 +170,8 @@ def detect_and_predict(image, model, detector, class_names, image_size=224,
     face_resized = cv2.resize(face, (image_size, image_size)).astype("float32")
     
     # Preprocess for VGGFace
-    face_pp = preprocess_input(face_resized.copy(), version=preprocess_version)
+    face_pp = preprocess_vggface_resnet(face_resized.copy())
+
     face_pp = np.expand_dims(face_pp, axis=0)
     
     # Predict
@@ -293,7 +305,7 @@ def main():
         if uploaded_file is not None:
             # Display uploaded image
             image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image", use_container_width=True)
+            st.image(image, caption="Uploaded Image", use_column_width=True)
             
             # Predict button
             if st.button("🔍 Recognize Face", type="primary", use_container_width=True):
@@ -361,7 +373,7 @@ def main():
                     result['confidence'],
                     color
                 )
-                st.image(img_with_box, caption="Face Detection", use_container_width=True)
+                st.image(img_with_box, caption="Face Detection", use_column_width=True)
                 
                 # Top 5 predictions
                 st.markdown("#### 📈 Top 5 Predictions")
