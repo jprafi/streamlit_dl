@@ -13,7 +13,6 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-red?logo=streamlit)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-Used-orange?logo=tensorflow)
 ![Status](https://img.shields.io/badge/Status-Deployed-success)
 ![License](https://img.shields.io/badge/License-Academic-green)
 
